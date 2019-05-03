@@ -1,7 +1,8 @@
 # embeddings-visualization
 
-It needs python3
-install requirements.txt
+* It needs python3
+* install requirements.txt
+* Reference code from: https://github.com/plotly/dash-tsne
 
 And run:
 `python3 app.py`
