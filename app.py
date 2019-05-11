@@ -8,14 +8,14 @@ from embeds import *
 app = dash.Dash(__name__)
 server = app.server
 
-if 'DYNO' in os.environ:
-    app.scripts.append_script({
-        'external_url': 'https://codepen.io/plotly/pen/BGyZNa.js'
-    })
-
-    demo_mode = True
-else:
-    demo_mode = False
+# if 'DYNO' in os.environ:
+#     app.scripts.append_script({
+#         'external_url': 'https://codepen.io/plotly/pen/BGyZNa.js'
+#     })
+#
+#     demo_mode = True
+# else:
+#     demo_mode = False
 
 
 

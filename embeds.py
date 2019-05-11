@@ -15,15 +15,21 @@ import pandas as pd
 import plotly.graph_objs as go
 import scipy.spatial.distance as spatial_distance
 
-main_df = pd.read_csv("tsne-videos-apr-18.csv", encoding="utf-8")
-categories = ["type", "ratings", "pop_genre", "least_pop_genre"]
+main_df = pd.read_csv("tsne-videos-latest.csv", encoding="utf-8").drop_duplicates(subset="video_id", keep="last")
+categories = ["type", "ratings", "pop_genre", "least_pop_genre", "top_100"]
 
 category = "type"
 df = main_df
 
+CIRCLE_SIZE=4
+
+last_category = None
+last_title = None
+
 def getNeighbours(select_vid, n=9, m=1):
     vector = main_df[["title", "x", "y", "z"]].set_index('title')
     selected_vec = vector.loc[select_vid]
+    print(selected_vec)
 
     def compare_pd(vector):
         return spatial_distance.euclidean(vector, selected_vec)
@@ -46,7 +52,7 @@ def getPlots(category, df):
             textposition='middle-center',
             mode='markers',
             marker=dict(
-                size=6,
+                size=CIRCLE_SIZE,
                 symbol='circle'
             )
         )]
@@ -64,7 +70,7 @@ def getPlots(category, df):
             textposition='middle-center',
             mode='markers',
             marker=dict(
-                size=6,
+                size=CIRCLE_SIZE,
                 symbol='circle'
             )
         )
@@ -156,16 +162,17 @@ embedsLayout = html.Div(
                             {'label': 'Video Type', 'value': 'type'},
                             {'label': 'TVPG/MPAA Ratings', 'value': 'ratings'},
                             {'label': 'Major Genre', 'value': 'pop_genre'},
-                            {'label': 'Minor Genre', 'value': 'least_pop_genre'}
+                            {'label': 'Minor Genre', 'value': 'least_pop_genre'},
+                            {'label': "Top 100", 'value': 'top_100'}
                         ],
                         placeholder="Select video label categories"
                     ),
-                    dcc.Dropdown(
-                        id='dropdown-catvalue',
-                        searchable=False,
-                        options=[],
-                        placeholder="Select specific category"
-                    ),
+                    # dcc.Dropdown(
+                    #     id='dropdown-catvalue',
+                    #     searchable=False,
+                    #     options=[],
+                    #     placeholder="Select specific category"
+                    # ),
                 ]),
 
                 Card(style={'padding': '5px'}, children=[
@@ -186,6 +193,7 @@ embedsLayout = html.Div(
     ]
 )
 
+
 def shorten_title(title):
     return title[:20] + (".." if len(title) >= 20 else "")
 
@@ -194,16 +202,18 @@ def embeds_callbacks(app):
     @app.callback(Output('graph-3d-plot-tsne', 'figure'),
                   [Input('dropdown-category', 'value'),
                    Input('dropdown-title', 'value'),
-                   Input('dropdown-catvalue', 'value')])
-    def display_3d_scatter_plot(category, title, catvalue):
+                   # Input('dropdown-catvalue', 'value')
+                   ])
+    def display_3d_scatter_plot(category, title):
+        last_category = category
+        last_title = title
+        catvalue= None
         df = None
 
         if title:
             _, df = getNeighbours(title, n=100, m=0)
         elif category:
             df = main_df
-            if catvalue:
-                df = df[df[category]==catvalue]
         else:
             df = main_df
 
@@ -234,8 +244,7 @@ def embeds_callbacks(app):
                 layout=layout
             )
         elif title:
-            print("Over here")
-            df["new"] = [df["title"][0]] + ["Neighbours" for x in range(len(df)-1)]
+            df["new"] = [title] + ["100 Neighbours" for x in range(len(df)-1)]
             figure = go.Figure(
                 data=getPlots("new", df),
                 layout=layout
@@ -248,11 +257,11 @@ def embeds_callbacks(app):
 
         return figure
 
-    @app.callback(Output('dropdown-catvalue', 'options'),
-                  [Input('dropdown-category', 'value')])
-    def display_category_options(category):
-        uniqs = df[category].unique()
-        return [{'label':k, 'value':k} for k in uniqs]
+    # @app.callback(Output('dropdown-catvalue', 'options'),
+    #               [Input('dropdown-category', 'value')])
+    # def display_category_options(category):
+    #     uniqs = df[category].unique()
+    #     return [{'label':k, 'value':k} for k in uniqs]
 
     @app.callback(Output('div-plot-click-image', 'children'),
                   [Input('graph-3d-plot-tsne', 'clickData'),
